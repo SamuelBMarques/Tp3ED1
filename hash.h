@@ -18,18 +18,9 @@ typedef struct {
 typedef struct {
     //Hash tabela[MAX_TAMANHO];  // Tabela hash
     Hash *tabela;
-    int tamanho;  // Número de elementos na hash
 } IndiceInvertido;
 
-// Manter como especificado
-IndiceInvertido* inicia();
-
-// Manter como especificado
-void libera(IndiceInvertido*);
-
-void imprime(IndiceInvertido *indice);
-
-//Definir de acordo com o metodo escolhido para insercao na arvore
-void insere (IndiceInvertido*, char *palavra, char *nomeDocumento);
+int H(char * chave, int m);
+void insereHash (Hash *hash, char* palavra);
 
 # endif

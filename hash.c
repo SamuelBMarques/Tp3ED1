@@ -4,60 +4,30 @@
 #include <stdlib.h>
 #include <string.h>
 
-IndiceInvertido* inicia() {
-    IndiceInvertido* indice;
-    indice = (IndiceInvertido*)malloc(sizeof(IndiceInvertido));
-    indice->tabela = (Hash*)malloc(MAX_TAMANHO* sizeof(Hash));
-    for(int i = 0; i< MAX_TAMANHO; i++){
-        indice->tabela[i].ocupado = 0;
-        indice->tabela[i].qtdDocumentos = 0;
-    }
-    return indice;
+int H(char * chave, int m) {
+    float p[] = {0.8326030060567271, 0.3224428884580177, 
+                 0.6964223353369197, 0.1966079596929834, 
+                 0.8949283476433433, 0.4587297824155836, 
+                 0.5100785238948532, 0.05356055934904358, 
+                 0.9157270141062215, 0.7278472432221632};
+    int tamP = 10;
+    unsigned int soma = 0;
+    for (int i=0;i<strlen ( chave );i++)
+        soma += (unsigned int) chave [i] * p[i % tamP];
+    return soma % m;
 }
 
 // Manter como especificado
-void libera(IndiceInvertido *indice) {
-    free(indice->tabela);
-}
-
-int H(const char* palavra) {
-    unsigned int s = 0;
-    for (int i = 0; i < strlen(palavra); i++) {
-        s += (unsigned int)palavra[i];
-    }
-    return s % MAX_TAMANHO;
-    
-}
-
-// Manter como especificado
-void insere (IndiceInvertido *indice, char* palavra, char *nomeDocumento) {
-    int h = H(palavra);
+void insereHash (Hash *hash, char* palavra) {
+    int h = H(palavra, MAX_DOCS);
     int j = 0;
-    while (indice->tabela[h+j].ocupado && strcmp(indice->tabela[h+j].palavra, palavra) != 0) {
+    while (hash[h+j].ocupado && strcmp(hash[h+j].palavra, palavra) != 0) {
         j++;  
     }
 
-    if (!indice->tabela[h+j].ocupado) {  
-        strcpy(indice->tabela[h+j].palavra, palavra);
-        indice->tabela[h+j].qtdDocumentos = 0;
-        indice->tabela[h+j].ocupado = 1;
+    if (!hash[h+j].ocupado) {  
+        strcpy(hash[h+j].palavra, palavra);
+        hash[h+j].ocupado = 1;
     }
+}
 
-    int qtd = indice->tabela[h+j].qtdDocumentos;
-    if (qtd < MAX_DOCS) {
-        strcpy(indice->tabela[h+j].documentos[qtd], nomeDocumento);
-        indice->tabela[h+j].qtdDocumentos++;
-    }
-    
-}
-void imprime(IndiceInvertido *indice) {
-    for (int i = 0; i < MAX_TAMANHO; i++) {
-        if (indice->tabela[i].ocupado) {
-            printf("%s -", indice->tabela[i].palavra);
-            for (int j = 0; j < indice->tabela[i].qtdDocumentos; j++) {
-                printf(" %s", indice->tabela[i].documentos[j]);
-            }
-            printf("\n");
-        }
-    }
-}
