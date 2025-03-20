@@ -7,23 +7,34 @@
 int main(){
     IndiceInvertido* indice = aloca();
     int n = 0;
-    char op, aux;
-    char documentos[MAX_DOCS][TAM_DOCUMENTO];
-    char palavras[MAX_PALAVRAS_DOC][TAM_PALAVRA];
-    int num_palavras[MAX_DOCS] = {0};
+    
     scanf("%d", &n);
     getchar();
-    le(indice,n,documentos,palavras,num_palavras);
-    scanf("%c",&op);
-    switch(op){
-        case 'B':
-            while(1){
-                scanf("%s%c");
+
+    le(indice, n);
+
+    char op;
+    scanf("%c", &op);
+    switch (op) {
+      case 'i':
+      case 'I':
+        imprime(indice);
+        break;
+      case'b':
+	  case 'B':
+        getchar();
+        char words[MAX_PALAVRAS_BUSCA][TAM_PALAVRA], ch;
+        int index =0;
+
+        while (scanf("%s%c", words[index++], &ch) == 2) {
+            if (ch == '\n') {
+                break;
             }
-        case 'I':
-            imprime(indice);
-    }   
-    imprime(indice);
+        }
+
+        consulta(indice, words, index);
+        break;
+    }
     libera(indice);
 }
 

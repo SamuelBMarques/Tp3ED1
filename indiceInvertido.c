@@ -7,64 +7,50 @@
 IndiceInvertido* aloca() {
     IndiceInvertido* indice;
     indice = (IndiceInvertido*)malloc(sizeof(IndiceInvertido));
-    indice->tabela = (Hash*)malloc(MAX_TAMANHO* sizeof(Hash));
-    for(int i = 0; i< MAX_TAMANHO; i++){
+    indice->tabela = (Hash*)malloc(MAX_TAMANHO * sizeof(Hash));
+    for (int i = 0; i < MAX_TAMANHO; i++){
         indice->tabela[i].ocupado = 0;
         indice->tabela[i].qtdDocumentos = 0;
     }
     return indice;
 }
 
-// Manter como especificado
 void libera(IndiceInvertido *indice) {
     free(indice->tabela);
+    free(indice);
 }
 
-void le(IndiceInvertido *indice,int n,  char documentos[][51], char palavras[][21], int* num_palavras){
+void le(IndiceInvertido *indice, int n) {
     for (int i = 0; i < n; i++) {
-        char linha[TAM_DOCUMENTO + (MAX_PALAVRAS_DOC * (TAM_PALAVRA + 1))];
-        fgets(linha, sizeof(linha), stdin);  // Lendo a linha completa
-
-        // Extrair o nome do documento
-        char *ptr = linha;
-        sscanf(ptr, "%s", documentos[i]);
-
-        // Pular o nome do documento e começar a extrair palavras
-        ptr += strlen(documentos[i]);
-        while (*ptr == ' ') ptr++;  // Pular espaços extras
-
-        // Extrair palavras até o final da linha
-        while (*ptr != '\0' && *ptr != '\n' && num_palavras[i] < MAX_PALAVRAS_DOC) {
-            sscanf(ptr, "%s", palavras[num_palavras[i]]);
-            ptr += strlen(palavras[num_palavras[i]]);
-            num_palavras[i]++;
-            while (*ptr == ' ') ptr++;  // Pular espaços extras
-        }
-        for(int j = 0; j<num_palavras[i]; j++){
-            insereIndice(indice,palavras[j],documentos[i]);
+        char word[TAM_PALAVRA], doc[TAM_DOCUMENTO], ch;
+        scanf("%s", doc);
+        while (scanf("%s%c", word, &ch) == 2) {
+            insereIndice(indice, word, doc);
+            if (ch == '\n') {
+                break;
+            }
         }
     }
 }
 
-void insereIndice (IndiceInvertido *indice, char* palavra, char *nomeDocumento) {
+
+void insereIndice(IndiceInvertido *indice, char* palavra, char *nomeDocumento) {
     int h = H(palavra, MAX_TAMANHO);
     int j = 0;
-    while (indice->tabela[h+j].ocupado && strcmp(indice->tabela[h+j].palavra, palavra) != 0) {
+    while (indice->tabela[h+j].ocupado &&
+           strcmp(indice->tabela[h+j].palavra, palavra) != 0) {
         j++;  
     }
-
     if (!indice->tabela[h+j].ocupado) {  
         strcpy(indice->tabela[h+j].palavra, palavra);
         indice->tabela[h+j].qtdDocumentos = 0;
         indice->tabela[h+j].ocupado = 1;
     }
-
     int qtd = indice->tabela[h+j].qtdDocumentos;
     if (qtd < MAX_DOCS) {
         strcpy(indice->tabela[h+j].documentos[qtd], nomeDocumento);
         indice->tabela[h+j].qtdDocumentos++;
     }
-    
 }
 
 void imprime(IndiceInvertido *indice) {
@@ -79,14 +65,92 @@ void imprime(IndiceInvertido *indice) {
     }
 }
 
-int busca(IndiceInvertido *indice, char* palavra){
-    for (int i = 0; i < MAX_TAMANHO; i++) {
-        if (indice->tabela[i].ocupado) {
-            for (int j = 0; j < MAX_DOCS; j++) {
-                if(strcmp(indice->tabela[i].documentos[j], palavra) == 0)
-                    return j;
+int busca(IndiceInvertido *indice, char* palavra) {
+    int h = H(palavra, MAX_TAMANHO);
+    int j = 0;
+    while (j < MAX_TAMANHO && indice->tabela[(h+j)%MAX_TAMANHO].ocupado &&
+           strcmp(indice->tabela[(h+j)%MAX_TAMANHO].palavra, palavra) != 0) {
+        j++;  
+    }
+    if (j >= MAX_TAMANHO || !indice->tabela[(h+j)%MAX_TAMANHO].ocupado) {
+        return -1;
+    }
+    return (h+j) % MAX_TAMANHO;
+}
+
+void consulta(IndiceInvertido *indice, char words[][TAM_PALAVRA], int n) {
+    if (n <= 0) {
+        printf("Nenhuma palavra fornecida.\n");
+        return;
+    }
+
+    // Se apenas uma palavra foi consultada, exibe os documentos dela.
+    if (n == 1) {
+        int idx = busca(indice, words[0]);
+        if (idx == -1) {
+            printf("Palavra '%s' não encontrada.\n", words[0]);
+            return;
+        }
+        // Ordena os documentos antes de exibir
+        ordenarStrings(indice->tabela[idx].documentos, indice->tabela[idx].qtdDocumentos);
+        for (int i = 0; i < indice->tabela[idx].qtdDocumentos; i++) {
+            printf("%s\n", indice->tabela[idx].documentos[i]);
+        }
+        return;
+    }
+
+    // Para múltiplas palavras, pegamos os documentos da primeira palavra.
+    int idx = busca(indice, words[0]);
+    if (idx == -1) {
+        printf("none\n");
+        return;
+    }
+    char intersecao[MAX_DOCS][TAM_DOCUMENTO];
+    int countInter = indice->tabela[idx].qtdDocumentos;
+    for (int i = 0; i < countInter; i++) {
+        strcpy(intersecao[i], indice->tabela[idx].documentos[i]);
+    }
+
+    // Atualiza a interseção para cada palavra adicional
+    for (int w = 1; w < n; w++) {
+        int idxW = busca(indice, words[w]);
+        if (idxW == -1) {
+            countInter = 0;
+            break;
+        }
+
+        // Cria um hash set para os documentos da palavra atual
+        DocHash docSet;
+        inicializarDocHash(&docSet);
+        for (int j = 0; j < indice->tabela[idxW].qtdDocumentos; j++) {
+            inserirDocHash(&docSet, indice->tabela[idxW].documentos[j]);
+        }
+
+        // Filtra a interseção atual usando o hash set
+        int countNova = 0;
+        char novaIntersecao[MAX_DOCS][TAM_DOCUMENTO];
+        for (int i = 0; i < countInter; i++) {
+            if (buscaDocHash(&docSet, intersecao[i])) {
+                strcpy(novaIntersecao[countNova], intersecao[i]);
+                countNova++;
             }
         }
+        countInter = countNova;
+        for (int i = 0; i < countNova; i++) {
+            strcpy(intersecao[i], novaIntersecao[i]);
+        }
+
+        if (countInter == 0) break;
     }
-    return 0;
+
+    // Exibe os documentos resultantes
+    if (countInter == 0) {
+        printf("none\n");
+    } else {
+        // Ordena os documentos resultantes
+        ordenarStrings(intersecao, countInter);
+        for (int i = 0; i < countInter; i++) {
+            printf("%s\n", intersecao[i]);
+        }
+    }
 }
