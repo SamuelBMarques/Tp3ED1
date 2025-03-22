@@ -21,8 +21,7 @@ typedef struct {
 } DocHash;
 
 typedef struct {
-    //Hash tabela[MAX_TAMANHO];  // Tabela hash
-    Hash *tabela;
+    Hash *tabela;   // Tabela hash
 } IndiceInvertido;
 
 int H(char * chave, int m);

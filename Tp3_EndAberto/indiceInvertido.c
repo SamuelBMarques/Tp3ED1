@@ -4,6 +4,13 @@
 #include "hash.h"
 #include "indiceInvertido.h"
 
+/* 
+Nome: aloca
+Funcão: Aloca a memória e inicializa o hash de indice invertido.
+Entrada:--
+Saida: Hash de indice invertido.
+*/
+
 IndiceInvertido* aloca() {
     IndiceInvertido* indice;
     indice = (IndiceInvertido*)malloc(sizeof(IndiceInvertido));
@@ -15,24 +22,44 @@ IndiceInvertido* aloca() {
     return indice;
 }
 
+/* 
+Nome: libera
+Funcão: Libera a memória do hash de indice invertido.
+Entrada: Hash de indice invertido.
+Saida: --
+*/
+
 void libera(IndiceInvertido *indice) {
     free(indice->tabela);
     free(indice);
 }
 
+/* 
+Nome: le
+Funcão: Lê a entrada e chama a função que insere no hash de indice invertido.
+Entrada: Hash de indice invertido e o número de linhas da entrada.
+Saida: --
+*/
+
 void le(IndiceInvertido *indice, int n) {
     for (int i = 0; i < n; i++) {
         char word[TAM_PALAVRA], doc[TAM_DOCUMENTO], ch;
-        scanf("%s", doc);
-        while (scanf("%s%c", word, &ch) == 2) {
-            insereIndice(indice, word, doc);
-            if (ch == '\n') {
+        scanf("%s", doc);                                       //Lê o documento
+        while (scanf("%s%c", word, &ch) == 2) {                 //Lê a palavra e o caracter em sequencia
+            insereIndice(indice, word, doc);                    //insere
+            if (ch == '\n') {                                   //Se o caracter for \n, chegou no final da linha
                 break;
             }
         }
     }
 }
 
+/* 
+Nome: insereIndice
+Funcão: Insere no hash de indice invertido, na devida posição e trata os casos de colisões.
+Entrada: Hash de indice invertido, palavra e documento.
+Saida: --
+*/
 
 void insereIndice(IndiceInvertido *indice, char* palavra, char *nomeDocumento) {
     int h = H(palavra, MAX_TAMANHO);
@@ -53,6 +80,13 @@ void insereIndice(IndiceInvertido *indice, char* palavra, char *nomeDocumento) {
     }
 }
 
+/* 
+Nome: imprime
+Funcão: Imprime todo o hash de indice invertido.
+Entrada: Hash de indice invertido.
+Saida: --
+*/
+
 void imprime(IndiceInvertido *indice) {
     for (int i = 0; i < MAX_TAMANHO; i++) {
         if (indice->tabela[i].ocupado) {
@@ -65,18 +99,32 @@ void imprime(IndiceInvertido *indice) {
     }
 }
 
+/* 
+Nome: busca
+Funcão: Procura uma palavra no hash, e retorna a posição, caso tenha encontrado.
+Entrada: Hash de indice invertido e a palavra.
+Saida: Posição em que a palavra foi encontrada.
+*/
+
 int busca(IndiceInvertido *indice, char* palavra) {
     int h = H(palavra, MAX_TAMANHO);
     int j = 0;
     while (j < MAX_TAMANHO && indice->tabela[(h+j)%MAX_TAMANHO].ocupado &&
-           strcmp(indice->tabela[(h+j)%MAX_TAMANHO].palavra, palavra) != 0) {
+           strcmp(indice->tabela[(h+j)%MAX_TAMANHO].palavra, palavra) != 0) {           // Se não percorreu todas as posições e a posição está ocupada e a palavra for diferente da buscada
         j++;  
     }
-    if (j >= MAX_TAMANHO || !indice->tabela[(h+j)%MAX_TAMANHO].ocupado) {
+    if (j >= MAX_TAMANHO || !indice->tabela[(h+j)%MAX_TAMANHO].ocupado) {               // Se percorreu todas as posições ou encontrou uma posição vazia
         return -1;
     }
     return (h+j) % MAX_TAMANHO;
 }
+
+/* 
+Nome: consulta
+Funcão: Procura uma ou mais palavras no hash e exibe os documentos que pertencem a ambas.
+Entrada: Hash de indice invertido, vetor de palavras e tamanho de tal vetor.
+Saida: --
+*/
 
 void consulta(IndiceInvertido *indice, char words[][TAM_PALAVRA], int n) {
     if (n <= 0) {
@@ -92,9 +140,9 @@ void consulta(IndiceInvertido *indice, char words[][TAM_PALAVRA], int n) {
             return;
         }
         // Ordena os documentos antes de exibir
-        ordenarStrings(indice->tabela[idx].documentos, indice->tabela[idx].qtdDocumentos);
+        ordenarStrings(indice->tabela[idx].documentos, indice->tabela[idx].qtdDocumentos);     
         for (int i = 0; i < indice->tabela[idx].qtdDocumentos; i++) {
-            printf("%s\n", indice->tabela[idx].documentos[i]);
+            printf("%s\n", indice->tabela[idx].documentos[i]);                  
         }
         return;
     }
@@ -105,6 +153,7 @@ void consulta(IndiceInvertido *indice, char words[][TAM_PALAVRA], int n) {
         printf("none\n");
         return;
     }
+
     char intersecao[MAX_DOCS][TAM_DOCUMENTO];
     int countInter = indice->tabela[idx].qtdDocumentos;
     for (int i = 0; i < countInter; i++) {

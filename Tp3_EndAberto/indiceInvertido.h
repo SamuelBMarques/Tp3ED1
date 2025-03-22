@@ -3,7 +3,7 @@
 
 #include "hash.h"
 
-// Allocation and free functions
+// Functions
 IndiceInvertido* aloca();
 void libera(IndiceInvertido *indice);
 void le(IndiceInvertido *indice, int n);
