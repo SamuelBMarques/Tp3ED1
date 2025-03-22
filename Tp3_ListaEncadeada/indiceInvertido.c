@@ -14,6 +14,9 @@ IndiceInvertido* aloca() {
 }
 
 void libera(IndiceInvertido *indice) {
+    if (indice == NULL) return;
+    
+    // Libera cada bucket e suas listas encadeadas
     for (int i = 0; i < MAX_TAMANHO; i++) {
         Hash *atual = indice->tabela[i];
         while (atual != NULL) {
@@ -21,14 +24,16 @@ void libera(IndiceInvertido *indice) {
             atual = atual->prox;
             free(temp); // Libera cada nó da lista
         }
+        indice->tabela[i] = NULL; // Marca como liberado (opcional, mas bom para debug)
     }
+    
+    // Libera a tabela e o índice
     free(indice->tabela);
     free(indice);
 }
-
 void le(IndiceInvertido *indice, int n) {
     for (int i = 0; i < n; i++) {
-        char word[TAM_PALAVRA], doc[TAM_DOCUMENTO], ch;
+        char word[TAM_PALAVRA] = {0}, doc[TAM_DOCUMENTO] = {0}, ch;
         scanf("%s", doc);
         while (scanf("%s%c", word, &ch) == 2) {
             insereIndice(indice, word, doc);
@@ -49,16 +54,38 @@ void insereIndice(IndiceInvertido *indice, char* palavra, char *nomeDocumento) {
         atual = atual->prox;
     }
 
-    if (atual != NULL) { // Palavra encontrada: atualiza documentos
-        if (atual->qtdDocumentos < MAX_DOCS) {
+    if (atual != NULL) { // Palavra encontrada: verifica se o documento já existe
+        // Verificar se o documento já existe na lista de documentos para esta palavra
+        int documentoExiste = 0;
+        for (int i = 0; i < atual->qtdDocumentos; i++) {
+            if (strcmp(atual->documentos[i], nomeDocumento) == 0) {
+                documentoExiste = 1;
+                break;
+            }
+        }
+        
+        // Se o documento não existe e há espaço, adiciona
+        if (!documentoExiste && atual->qtdDocumentos < MAX_DOCS) {
             strcpy(atual->documentos[atual->qtdDocumentos], nomeDocumento);
             atual->qtdDocumentos++;
         }
     } else { // Nova palavra: cria nó e insere no início
         Hash *novo = (Hash*)malloc(sizeof(Hash));
+        if (novo == NULL) {
+            // Tratamento de erro: falha na alocação
+            return;
+        }
+        
+        // Inicializa explicitamente cada campo
         strcpy(novo->palavra, palavra);
+        novo->qtdDocumentos = 1;
         strcpy(novo->documentos[0], nomeDocumento);
-        novo->qtdDocumentos++;
+        
+        // Inicializa explicitamente as outras posições do array documentos
+        for (int i = 1; i < MAX_DOCS; i++) {
+            novo->documentos[i][0] = '\0';
+        }
+        
         novo->prox = indice->tabela[h];
         indice->tabela[h] = novo;
     }
@@ -117,7 +144,7 @@ void consulta(IndiceInvertido *indice, char words[][TAM_PALAVRA], int n) {
         return;
     }
 
-    char intersecao[MAX_DOCS][TAM_DOCUMENTO];
+    char intersecao[MAX_DOCS][TAM_DOCUMENTO] = {0};
     int countInter = primeiraNode->qtdDocumentos;
     for (int i = 0; i < countInter; i++) {
         strcpy(intersecao[i], primeiraNode->documentos[i]);
@@ -133,7 +160,7 @@ void consulta(IndiceInvertido *indice, char words[][TAM_PALAVRA], int n) {
 
         // Filtra a interseção atual usando os documentos da palavra atual
         int countNova = 0;
-        char novaIntersecao[MAX_DOCS][TAM_DOCUMENTO];
+        char novaIntersecao[MAX_DOCS][TAM_DOCUMENTO] = {0};
         for (int i = 0; i < countInter; i++) {
             for (int j = 0; j < node->qtdDocumentos; j++) {
                 if (strcmp(intersecao[i], node->documentos[j]) == 0) {
