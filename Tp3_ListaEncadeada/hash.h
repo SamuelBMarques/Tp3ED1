@@ -26,6 +26,7 @@ typedef struct {
 } IndiceInvertido;
 
 int H(char * chave, int m);
+int H2(char * chave, int m);
 void inserirDocHash(DocHash *set, const char *doc);
 void imprimeDoc(Hash *hash);
 void inicializarDocHash(DocHash *set);

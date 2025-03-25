@@ -24,7 +24,7 @@ void libera(IndiceInvertido *indice) {
             atual = atual->prox;
             free(temp); // Libera cada nó da lista
         }
-        indice->tabela[i] = NULL; // Marca como liberado (opcional, mas bom para debug)
+        indice->tabela[i] = NULL; // Marca como liberado
     }
     
     // Libera a tabela e o índice
@@ -47,7 +47,8 @@ void le(IndiceInvertido *indice, int n) {
 
 void insereIndice(IndiceInvertido *indice, char* palavra, char *nomeDocumento) {
     int h = H(palavra, MAX_TAMANHO);
-    Hash *atual = indice->tabela[h];
+    int h2 = H2(palavra,MAX_TAMANHO);
+    Hash *atual = indice->tabela[(h+h2)%MAX_TAMANHO];
 
     // Procura a palavra na lista
     while (atual != NULL && strcmp(atual->palavra, palavra) != 0) {
@@ -86,8 +87,8 @@ void insereIndice(IndiceInvertido *indice, char* palavra, char *nomeDocumento) {
             novo->documentos[i][0] = '\0';
         }
         
-        novo->prox = indice->tabela[h];
-        indice->tabela[h] = novo;
+        novo->prox = indice->tabela[(h+h2)%MAX_TAMANHO];
+        indice->tabela[(h+h2)%MAX_TAMANHO] = novo;
     }
 }
 
@@ -107,7 +108,8 @@ void imprime(IndiceInvertido *indice) {
 
 Hash* busca(IndiceInvertido *indice, char* palavra) {
     int h = H(palavra, MAX_TAMANHO);
-    Hash *atual = indice->tabela[h];
+    int h2 = H2(palavra,MAX_TAMANHO);
+    Hash *atual = indice->tabela[(h + h2)%MAX_TAMANHO];
     while (atual != NULL) {
         if (strcmp(atual->palavra, palavra) == 0) {
             return atual; // Retorna o nó encontrado
